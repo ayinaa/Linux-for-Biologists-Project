@@ -35,7 +35,7 @@ for line in fasta_input_file:
     if line.startswith(">"):
         gene_count +=1
     else: continue
-print(gene_count)
+print("\nTotal Number of Genes: ", gene_count)
 fasta_input_file.close()
 
 fasta_input_file=open(args.inputfile,"r")
@@ -43,27 +43,29 @@ dictionary_of_sequences={}
 identifier=fasta_input_file.readline()
 for x in range(gene_count):
     boolean="TRUE"
+    ID = ""
     sequence=""
     loc_old=""
     while boolean == "TRUE":
         line=fasta_input_file.readline()
         loc_new=fasta_input_file.tell()
         if line.startswith(">"):
-            boolean="FALSE"
+            boolean = "FALSE"
         elif loc_new == loc_old:
-            boolean="FALSE"
-        elif line.endswith('*'):
-            sequece=sequence+line
+            boolean = "FALSE"
         else:
-            boolean="FALSE"
+            sequence = line+ sequence
         loc_old=fasta_input_file.tell()
+    sequence=sequence.replace("\n","") ####
     identifier=identifier.replace("\n", "")
     identifier=identifier.replace(">", "")  # removes  ">"
-    dictionary_of_sequences[identifier]=sequence ## stores the id with its sequence in dictionary
+    if (len(identifier.split())>1):
+        ID = identifier.split(" ")[0] ###
+    else:
+        ID = identifier
+    dictionary_of_sequences[ID]= sequence ## stores the id with its sequence in dictionary
     identifier=line
 
-for i in dictionary_of_sequences:
-    print(dictionary_of_sequences[i])
     
 fasta_input_file.close()
 
@@ -75,30 +77,39 @@ for v in fasta_input_seq_file:
     if v.endswith("\n"):
         counter +=1
     else: continue
-print(counter)
+print("\nWanted number of genes: ", counter, "\n")
 fasta_input_file.close()
 fasta_input_seq_file = open(args.inputsequencefile, 'r') 
 new ={}
 for x in range(counter):
     seq_name = fasta_input_seq_file.readline()
-    new[seq_name] = dictionary_of_sequences[seq_name]
+    seq_name = seq_name.replace("\n", "")
+    x = seq_name.split(" ")[0]
+    if x in dictionary_of_sequences:
+        new[x] = dictionary_of_sequences[x]
+    else: 
+        continue
+        
 fasta_input_seq_file.close()
 
 
 # WRITE OUTPUT FILE W/ OPTIONAL SORT ALPHABETICALLY
-fasta_input_seq_file = open(args.inputsequencefile, 'r') 
+fasta_input_seq_file = open(args.inputsequencefile, 'r')
 file_out = open(args.outputfile, "w") #opens the file to write
 
 if args.sortalphabetically == "yes":
-    file_out.writelines('This is sorted alphabetically')
+    file_out.writelines('This is sorted alphabetically\n\n\n')
     lines = fasta_input_seq_file.readlines() # reads all lines
-    sorted_ids = sorted (lines) # sorts all lines
+    sorted_ids = sorted (lines) # sorts all lines    
     for seq_name in sorted_ids:
-        file_out.writelines(">" + seq_name + "\n" + new[seq_name] + "\n")
+        if '\n' in seq_name:
+            seq_name=seq_name.replace("\n","")
+        else: continue
+        file_out.writelines(">" + seq_name + "\n" + new[seq_name] + "\n\n")
 
 else: # if not sorted alphabetically
-    for seq_name in new:
-        file_out.writelines(">"+seq_name+"\n"+new[seq_name]+"\n")
+    for gene in new:
+        file_out.writelines(">"+gene+"\n"+new[gene]+"\n\n")
 
 file_out.close()
 fasta_input_seq_file.close()
